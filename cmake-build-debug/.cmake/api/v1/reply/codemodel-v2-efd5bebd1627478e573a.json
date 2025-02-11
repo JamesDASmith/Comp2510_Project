@@ -1,0 +1,60 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"jsonFile" : "directory-.-Debug-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.30"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "Comp2510_Project",
+					"targetIndexes" : 
+					[
+						0
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "Comp2510_Project::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Comp2510_Project-Debug-cdd5a87d6cfaabe7a53b.json",
+					"name" : "Comp2510_Project",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "C:/Users/James/Personal/School/2025 CST Term 2/Comp 2510 - Procedural Programming/Term Project/Project/Comp2510_Project/cmake-build-debug",
+		"source" : "C:/Users/James/Personal/School/2025 CST Term 2/Comp 2510 - Procedural Programming/Term Project/Project/Comp2510_Project"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 7
+	}
+}
