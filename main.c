@@ -14,6 +14,15 @@ void manageDrSchedule();
 
 int totalPatients = 0;
 
+const int DAYS_OF_WEEK = 7;
+const int SHIFTS_PER_DAY = 3;
+const int MONDAY = 1;
+const int TUESDAY = 2;
+const int WEDNESDAY = 3;
+const int THURSDAY = 4;
+const int FRIDAY = 5;
+const int SATURDAY = 6;
+const int SUNDAY = 7;
 const int MAX_PATIENTS = 50;
 const int DELETE = 666;
 
@@ -273,11 +282,88 @@ void dischargePatient() {
 }
 
 void manageDrSchedule() {
-    //doctor schedule for the week
-    char schedule[7][3];
+    //TODO doctor schedule for the week
+    int schedule[DAYS_OF_WEEK][SHIFTS_PER_DAY];
+    int choice;
 
+    printf("What would you like to do?\n");
+    printf("1. Add Doctor to Schedule\n");
+    printf("2. View Schedule\n");
 
+    scanf("%d", &choice);
+    getchar();
+
+    switch (choice) {
+        case 1:
+            int doctorID;
+            int shiftDay;
+            int shiftTime;
+            printf("Enter Doctor ID:\n");
+            scanf("%d", &doctorID);
+            getchar();
+
+            printf("Enter Shift Day:\n");
+            printf("1. Monday\n");
+            printf("2. Tuesday\n");
+            printf("3. Wednesday\n");
+            printf("4. Thursday\n");
+            printf("5. Friday\n");
+            printf("6. Saturday\n");
+            printf("7. Sunday\n");
+            scanf("%d", &shiftDay);
+            getchar();
+
+            printf("Enter Shift Time:\n");
+            printf("1. Morning\n");
+            printf("2. Evening\n");
+            printf("3. Night\n");
+            scanf("%d", &shiftTime);
+            getchar();
+
+            schedule[shiftDay-1][shiftTime-1] = doctorID;
+            break;
+
+        case 2:
+            // Prints the Header for the Calendar
+            printf("Shift Calendar\n");
+            printf("\t\tMorning:\t\tEvening:\t\tNight:\n");
+
+            // Prints the Day of the Week before each row
+            for (int i = 1; i <= DAYS_OF_WEEK; i++) {
+
+                if (i == 1) {
+                    printf("Monday:");
+                }else if (i == 2) {
+                    printf("Tuesday:");
+                }else if (i == 3) {
+                    printf("Wednesday:");
+                }else if (i == 4) {
+                    printf("Thursday:");
+                }else if (i == 5) {
+                    printf("Friday:");
+                }else if (i == 6) {
+                    printf("Saturday:");
+                }else if (i == 7) {
+                    printf("Sunday:");
+                }else {
+                    printf("Day of Week Error.");
+                }
+
+                // Prints the value stored in the current array unit where doctor is stored
+                // TODO fix placeholder digit with String.
+                for (int j = 1; j <= SHIFTS_PER_DAY; j++) {
+                        printf("\t\t%d", schedule[i][j]);
+                }
+
+                printf("\n");
+            }
+        break;
+
+        default:
+            printf("Invalid Input:\n");
+    }
 }
+
 
 void menu() {
     int choice;
