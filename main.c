@@ -367,11 +367,21 @@ void manageDrSchedule() {
             char name[50];
             int shiftDay;
             int shiftTime;
+            int status = 0;
 
             // User inputs Doctor Name
-            printf("Enter Doctor Name:\n");
-            fgets(name, sizeof(name), stdin);
-            name[strcspn(name, "\n")] = 0;
+            do {
+                printf("Enter Doctor Name:\n");
+                fgets(name, sizeof(name), stdin);
+                name[strcspn(name, "\n")] = 0;
+
+                if (strlen(name) == 0) {
+                    printf("Name cannot be empty.\n");
+                    printf("Re-Enter\n");
+                } else {
+                    status = 1;
+                }
+            } while (status != 1);
 
             // User chooses day of said doctor's shift
             printf("Enter Shift Day:\n");
