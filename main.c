@@ -29,8 +29,10 @@ void    organizePatientList();
 void    dischargePatient();
 void    manageDrSchedule();
 void    toLowerString();
-int     readFromFile();
-void    writeToFile();
+int     read_from_patient_file();
+int     read_from_schedule_file();
+void    write_to_patient_file();
+void    write_to_schedule_file();
 
 // VARIABLE DECLARATIONS
 int totalPatients = 0;
@@ -73,11 +75,12 @@ int main(void)
         printf("Memory allocation failed in main()\n");
         return 1;
     }
-    if (readFromFile(&patient_ptr, &totalPatients) == 0) {
+    if (read_from_patient_file(&patient_ptr, &totalPatients) == 0) {
         printf("Starting with empty patient database.\n");
     }
+    read_from_schedule_file(&schedule);
     menu();
-    writeToFile(patient_ptr, totalPatients);
+    write_to_patient_file(patient_ptr, totalPatients);
     free(patient_ptr);
     return 0;
 }
@@ -436,6 +439,7 @@ void manageDrSchedule() {
                 break;
         }
             strcpy(schedule[shiftDay - 1][shiftTime - 1], name);
+            write_to_schedule_file(schedule);
             break;
 
         case 2: // User chooses to view doctor schedule.
@@ -525,16 +529,6 @@ void organizePatientList(int index, struct Patient *patient_ptr, int totalPatien
  * @param index int - representing the index of the patient's location in the struct array.
  */
 void printPatient(int index) {
-    // printf("Patient ID:");
-    // printf("%d\n", patients[index].patient_id);
-    // printf("Name:");
-    // printf("%s\n", patients[index].name);
-    // printf("Age:");
-    // printf("%d\n", patients[index].age);
-    // printf("Diagnosis:");
-    // printf("%s\n", patients[index].diagnosis);
-    // printf("Room Number:");
-    // printf("%d\n", patients[index].room_number);
     printf("Patient ID:");
     printf("%d\n", patient_ptr[index].patient_id);
     printf("Name:");
@@ -563,7 +557,7 @@ void toLowerString(char *str) {
  * @param patient_ptr pointer to patient array
  * @return 1 if file is read successfully, 0 otherwise
  */
-int readFromFile(struct Patient **patient_ptr, int *totalPatients) {
+int read_from_patient_file(struct Patient **patient_ptr, int *totalPatients) {
     *totalPatients = 0;
     FILE *file = fopen("patients.txt", "r");
     if (file == NULL) {
@@ -612,14 +606,12 @@ int readFromFile(struct Patient **patient_ptr, int *totalPatients) {
     return 1;
 }
 
-
-
 /**
  * write patient data to file
  * @param patient_ptr array of patients
  * @param totalPatients total number of patients
  */
-void writeToFile(struct Patient *patient_ptr, int totalPatients) {
+void write_to_patient_file(struct Patient *patient_ptr, int totalPatients) {
     FILE *file = fopen("patients.txt", "w");
     if (file == NULL) {
         printf("error opening file");
@@ -632,6 +624,49 @@ void writeToFile(struct Patient *patient_ptr, int totalPatients) {
             patient_ptr[i].age,
             patient_ptr[i].diagnosis,
             patient_ptr[i].room_number);
+    }
+    fclose(file);
+}
+
+int read_from_schedule_file(char schedule[7][3][50]) {
+    FILE *file = fopen("schedule.txt", "r");
+    if (file == NULL) {
+        printf("File not found.\n");
+    }
+    char buffer[200];
+    while (fgets(buffer, sizeof(buffer), file)) {
+        buffer[strcspn(buffer, "\n")] = 0;
+        char *token;
+        int row;
+        int col;
+        char name[50];
+
+        token = strtok(buffer, ",");
+        row = atoi(token);
+        token = strtok(NULL, ",");
+        col = atoi(token);
+        token = strtok(NULL, ",");
+        if (token) {
+            strncpy(name, token, sizeof(name) - 1);
+            strcpy(schedule[row][col], name);
+        }
+    }
+    fclose(file);
+}
+
+/**
+ * wrtie doctor schedule to file
+ * @param schedule  array o fdoctor schedule
+ */
+void write_to_schedule_file(char schedule[7][3][50]) {
+    FILE *file = fopen("schedule.txt", "w");
+    if (file == NULL) {
+        printf("error opening file");
+    }
+    for (int i = 0; i < 7; i++) {
+        for (int j = 0; j < 3; j++) {
+            fprintf(file, "%d,%d,%s\n",i, j, schedule[i][j]);
+        }
     }
     fclose(file);
 }
