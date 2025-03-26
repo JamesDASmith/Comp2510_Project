@@ -333,10 +333,10 @@ void dischargePatient() {
         case 1: // Checks Patient ID, removing them if found.
             printf("Enter ID:\n");
             scanf("%d", &id);
-            index = idExists(id, patients, totalPatients);
+            index = idExists(id, patient_ptr, totalPatients);
             if (index != -1) {
                 patients[index] = def;
-                organizePatientList(index, patients, totalPatients);
+                organizePatientList(index, patient_ptr, totalPatients);
                 totalPatients --;
                 printf("Patient discharged successfully.\n");
             }else {
@@ -348,10 +348,11 @@ void dischargePatient() {
             printf("Enter Name: \n");
             fgets(name, 50, stdin);
             name[strcspn(name, "\n")] = 0;
-            index = searchPatientByName(name, patients, totalPatients);
+            toLowerString(name);
+            index = searchPatientByName(name, patient_ptr, totalPatients);
             if (index != -1) {
                 patients[index] = def;
-                organizePatientList(index, patients, totalPatients);
+                organizePatientList(index, patient_ptr, totalPatients);
                 totalPatients --;
                 printf("Patient discharged successfully.\n");
             }else {
@@ -498,15 +499,15 @@ int idExists(int id, struct Patient *patient_ptr, int size) {
  * Organizes the list of patients in the hotel.
  *
  * @param index         - index of an incoming patient in the array
- * @param patients      - struct representing a list of patients
+ * @param patient_ptr      - pointer to ab array of patients
  * @param totalPatients - int representing the total number of patients checked into the hotel
  */
-void organizePatientList(int index, struct Patient patients[], int totalPatients) {
+void organizePatientList(int index, struct Patient *patient_ptr, int totalPatients) {
     struct Patient def = {};
     for (int i = index; i < totalPatients - 1; i++  ) {
-        patients[i] = patients[i + 1];
+        patient_ptr[i] = patients[i + 1];
     }
-    patients[totalPatients - 1] = def;
+    patient_ptr[totalPatients - 1] = def;
 }
 
 /**
