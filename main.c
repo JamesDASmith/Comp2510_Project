@@ -46,7 +46,7 @@ const int SATURDAY = 6;
 const int SUNDAY = 7;
 const int DELETE = 666;
 
-char * schedule[7][3];
+char schedule[7][3][50];
 
 //struct representing each patient
 struct Patient {
@@ -435,8 +435,7 @@ void manageDrSchedule() {
                 printf("Invalid Input. Terminating...\n");
                 break;
         }
-
-            schedule[shiftDay][shiftTime] = strdup(name);
+            strcpy(schedule[shiftDay - 1][shiftTime - 1], name);
             break;
 
         case 2: // User chooses to view doctor schedule.
@@ -467,7 +466,7 @@ void manageDrSchedule() {
 
                 // Prints the value stored in the current array unit where doctor is store.
                 for (int j = 1; j <= SHIFTS_PER_DAY; j++) {
-                        printf("\t\t%s", schedule[i][j]);
+                        printf("\t\t%s", schedule[i - 1][j - 1]);
                 }
 
                 printf("\n");
