@@ -1,5 +1,7 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 // INFORMATION
 /**
@@ -26,6 +28,7 @@ void    searchPatients();
 void    organizePatientList();
 void    dischargePatient();
 void    manageDrSchedule();
+void    toLowerString();
 
 // VARIABLE DECLARATIONS
 int totalPatients = 0;
@@ -44,6 +47,18 @@ const int DELETE = 666;
 
 char * schedule[7][3];
 
+//struct representing each patient
+struct Patient {
+    int patient_id;
+    char name[50];
+    int age;
+    char diagnosis[50];
+    int room_number;
+};
+
+struct Patient patients[50];//size: 5800 ; each patient: 116
+struct Patient *patient_ptr;
+
 // MAIN METHOD
 /**
  * Main method. Beginning of the flow of control.
@@ -52,7 +67,15 @@ char * schedule[7][3];
  */
 int main(void)
 {
+    patient_ptr = (struct Patient*)malloc(50 * sizeof(struct Patient));
+    if (patient_ptr == NULL) {
+        printf("Memory allocation failed in main()\n");
+        return 1;
+    }
+    printf("%zu\n", sizeof(patient_ptr));
+
     menu();
+
     return 0;
 }
 
@@ -70,7 +93,7 @@ void menu() {
         printf("4. Discharge Patient\n");
         printf("5. Manage Doctor Schedule\n");
         printf("6. Exit\n"
-               "Enter your choice: ");
+               "Enter your choice: \n");
 
         scanf("%d", &choice);
         getchar(); // Consume newline
@@ -100,17 +123,6 @@ void menu() {
     printf("Thanks for visiting!");
 }
 
-//struct representing each patient
-struct Patient {
-    int patient_id;
-    char name[50];
-    int age;
-    char diagnosis[50];
-    int room_number;
-};
-
-struct Patient patients[50];
-
 
 /**
  * Creates a patient, prompting a user for input.
@@ -128,6 +140,7 @@ void addPatient() {
     // Checks room for more patients at the hospital
     if (totalPatients >= MAX_PATIENTS) {
         printf("Patient Regsitry Full.");
+        //expand memory for patient_ptr here
         return;
     }
 
@@ -159,7 +172,7 @@ void addPatient() {
             status = 1;
         }
     }while (status == 0);
-
+    toLowerString(patient.name);
     status = 0;
 
     // Ensures patient Age is successfully input, continues to prompt in case of invalid input.
@@ -206,6 +219,9 @@ void addPatient() {
 
     // Adds the new patient to the array.
     patients[totalPatients] = patient;
+    //with pointer
+    patient_ptr[totalPatients] = patient;
+
     totalPatients++;
     printf("Patient Added Successfully\n");
 }
@@ -242,7 +258,7 @@ void searchPatients() {
         case 1:
             printf("Enter Patient ID:");
         scanf("%d", &id);
-        index = idExists(id, patients, totalPatients);
+        index = idExists(id, patient_ptr, totalPatients);
         if (index != -1) {
             printf("--------------------------\n");
             printPatient(index);
@@ -255,7 +271,7 @@ void searchPatients() {
             printf("Enter Patient Name:");
         fgets(name, 50, stdin);
         name[strcspn(name, "\n")] = 0;
-        index = searchPatientByName(name, patients, totalPatients);
+        index = searchPatientByName(name, patient_ptr, totalPatients);
         if (index == -1) {
             printf("No patients with the name %s exists.\n", name);
         }else {
@@ -276,17 +292,18 @@ void searchPatients() {
  * returns the index they can be found in the array. Else -1 is returned.
  *
  * @param name          - array of chars representing a patient's name.
- * @param patients      - struct representing an array of patients.
+ * @param patient_ptr      - pointer to an array of patients.
  * @param totalPatients - int representing the number of patients currently checked into the hospital.
  *
  * @return              - int representing the integer representing the index a patient can be found.
  */
-int searchPatientByName(char name[], struct Patient patients[], int totalPatients) {
+int searchPatientByName(char name[], struct Patient *patient_ptr, int totalPatients) {
     if (strlen(name) == 0) {
         printf("name cannot be empty.\n");
     }else {
+        toLowerString(name);
         for (int i = 0; i < totalPatients; i++) {
-            if (strcmp(name, patients[i].name) == 0) {
+            if (strcmp(name, patient_ptr[i].name) == 0) {
                 return i;
             }
         }
@@ -463,14 +480,14 @@ void manageDrSchedule() {
  * If it does the index of the patient is returned, else -1 is returned.
  *
  * @param id        - the ID you would like to check to see if it exists in the system.
- * @param patients  - the struct representing the array of patients in the system.
+ * @param patient_ptr  - pointer to the array of patients in the system.
  * @param size      - the size of the patient array the method will check through.
  * @return int      - representing the index of the patient whose ID was passed into the method. If no patient is found
  *                  then -1 is returned instead.
  */
-int idExists(int id, struct Patient patients[], int size) {
+int idExists(int id, struct Patient *patient_ptr, int size) {
     for (int i = 0; i < size; i++ ) {
-        if (patients[i].patient_id == id) {
+        if (patient_ptr[i].patient_id == id) {
             return i;
         }
     }
@@ -503,15 +520,36 @@ void organizePatientList(int index, struct Patient patients[], int totalPatients
  * @param index int - representing the index of the patient's location in the struct array.
  */
 void printPatient(int index) {
+    // printf("Patient ID:");
+    // printf("%d\n", patients[index].patient_id);
+    // printf("Name:");
+    // printf("%s\n", patients[index].name);
+    // printf("Age:");
+    // printf("%d\n", patients[index].age);
+    // printf("Diagnosis:");
+    // printf("%s\n", patients[index].diagnosis);
+    // printf("Room Number:");
+    // printf("%d\n", patients[index].room_number);
     printf("Patient ID:");
-    printf("%d\n", patients[index].patient_id);
+    printf("%d\n", patient_ptr[index].patient_id);
     printf("Name:");
-    printf("%s\n", patients[index].name);
+    printf("%s\n", patient_ptr[index].name);
     printf("Age:");
-    printf("%d\n", patients[index].age);
+    printf("%d\n", patient_ptr[index].age);
     printf("Diagnosis:");
-    printf("%s\n", patients[index].diagnosis);
+    printf("%s\n", patient_ptr[index].diagnosis);
     printf("Room Number:");
-    printf("%d\n", patients[index].room_number);
+    printf("%d\n", patient_ptr[index].room_number);
+}
+
+/**
+ * utility function to turn all strings to lowercase
+ * @param str pointer to string
+ */
+void toLowerString(char *str) {
+    while (*str) {
+        *str = tolower(*str);
+        str++;
+    }
 }
 
