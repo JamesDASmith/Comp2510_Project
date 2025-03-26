@@ -32,7 +32,7 @@ void    toLowerString();
 
 // VARIABLE DECLARATIONS
 int totalPatients = 0;
-
+int max_patients = 1;
 const int DAYS_OF_WEEK = 7;
 const int SHIFTS_PER_DAY = 3;
 const int MONDAY = 1;
@@ -42,7 +42,6 @@ const int THURSDAY = 4;
 const int FRIDAY = 5;
 const int SATURDAY = 6;
 const int SUNDAY = 7;
-const int MAX_PATIENTS = 50;
 const int DELETE = 666;
 
 char * schedule[7][3];
@@ -56,7 +55,7 @@ struct Patient {
     int room_number;
 };
 
-struct Patient patients[50];//size: 5800 ; each patient: 116
+// struct Patient patients[50];//size: 5800 ; each patient: 116
 struct Patient *patient_ptr;
 
 // MAIN METHOD
@@ -72,10 +71,9 @@ int main(void)
         printf("Memory allocation failed in main()\n");
         return 1;
     }
-    printf("%zu\n", sizeof(patient_ptr));
 
     menu();
-
+    free(patient_ptr);
     return 0;
 }
 
@@ -138,10 +136,14 @@ void addPatient() {
     struct Patient patient = {};
 
     // Checks room for more patients at the hospital
-    if (totalPatients >= MAX_PATIENTS) {
-        printf("Patient Regsitry Full.");
+    if (totalPatients >= max_patients) {
         //expand memory for patient_ptr here
-        return;
+        max_patients += 10;
+        struct Patient *tmp = realloc(patient_ptr, max_patients * sizeof(struct Patient));
+        if (tmp == NULL) {
+            printf("Memory allocation failed in addPatient()\n");
+        }
+        patient_ptr = tmp;
     }
 
     // Ensures patient ID is successfully input, continues to prompt in case of invalid input.
@@ -150,7 +152,7 @@ void addPatient() {
         scanf("%d", &id);
         getchar();
 
-        if (id <= 0 || idExists(id, patients, totalPatients) != -1) {
+        if (id <= 0 || idExists(id, patient_ptr, totalPatients) != -1) {
             printf("Invalid or duplicate ID\n");
             printf("Re-Enter\n");
         }else {
@@ -217,8 +219,6 @@ void addPatient() {
         }
     }while (status == 0);
 
-    // Adds the new patient to the array.
-    patients[totalPatients] = patient;
     //with pointer
     patient_ptr[totalPatients] = patient;
 
@@ -335,7 +335,7 @@ void dischargePatient() {
             scanf("%d", &id);
             index = idExists(id, patient_ptr, totalPatients);
             if (index != -1) {
-                patients[index] = def;
+                patient_ptr[index] = def;
                 organizePatientList(index, patient_ptr, totalPatients);
                 totalPatients --;
                 printf("Patient discharged successfully.\n");
@@ -351,7 +351,7 @@ void dischargePatient() {
             toLowerString(name);
             index = searchPatientByName(name, patient_ptr, totalPatients);
             if (index != -1) {
-                patients[index] = def;
+                patient_ptr[index] = def;
                 organizePatientList(index, patient_ptr, totalPatients);
                 totalPatients --;
                 printf("Patient discharged successfully.\n");
@@ -505,7 +505,7 @@ int idExists(int id, struct Patient *patient_ptr, int size) {
 void organizePatientList(int index, struct Patient *patient_ptr, int totalPatients) {
     struct Patient def = {};
     for (int i = index; i < totalPatients - 1; i++  ) {
-        patient_ptr[i] = patients[i + 1];
+        patient_ptr[i] = patient_ptr[i + 1];
     }
     patient_ptr[totalPatients - 1] = def;
 }
