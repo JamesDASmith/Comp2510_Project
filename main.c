@@ -29,10 +29,12 @@ void    organizePatientList();
 void    dischargePatient();
 void    manageDrSchedule();
 void    toLowerString();
+int     readFromFile();
+void    writeToFile();
 
 // VARIABLE DECLARATIONS
 int totalPatients = 0;
-int max_patients = 1;
+int max_patients = 50;
 const int DAYS_OF_WEEK = 7;
 const int SHIFTS_PER_DAY = 3;
 const int MONDAY = 1;
@@ -66,13 +68,16 @@ struct Patient *patient_ptr;
  */
 int main(void)
 {
-    patient_ptr = (struct Patient*)malloc(50 * sizeof(struct Patient));
+    patient_ptr = (struct Patient*)malloc(max_patients * sizeof(struct Patient));
     if (patient_ptr == NULL) {
         printf("Memory allocation failed in main()\n");
         return 1;
     }
-
+    if (readFromFile(&patient_ptr, &totalPatients) == 0) {
+        printf("Starting with empty patient database.\n");
+    }
     menu();
+    writeToFile(patient_ptr, totalPatients);
     free(patient_ptr);
     return 0;
 }
@@ -554,3 +559,80 @@ void toLowerString(char *str) {
     }
 }
 
+/**
+ * read from file
+ * @param patient_ptr pointer to patient array
+ * @return 1 if file is read successfully, 0 otherwise
+ */
+int readFromFile(struct Patient **patient_ptr, int *totalPatients) {
+    *totalPatients = 0;
+    FILE *file = fopen("patients.txt", "r");
+    if (file == NULL) {
+        printf("File not found.\n");
+        return 0;
+    }
+
+    char buffer[200];
+
+    while (fgets(buffer, sizeof(buffer), file)) {
+        if (*totalPatients >= max_patients) {
+            max_patients += 10;
+            struct Patient *tmp = realloc(*patient_ptr, max_patients * sizeof(struct Patient));
+            if (!tmp) {
+                printf("Memory allocation error while reading file.\n");
+                fclose(file);
+                return 0;
+            }
+            *patient_ptr = tmp;
+        }
+
+        buffer[strcspn(buffer, "\n")] = 0;
+
+        struct Patient p = {};
+        char *token;
+
+        token = strtok(buffer, ",");
+        if (token) p.patient_id = atoi(token);
+
+        token = strtok(NULL, ",");
+        if (token) strncpy(p.name, token, sizeof(p.name) - 1);
+
+        token = strtok(NULL, ",");
+        if (token) p.age = atoi(token);
+
+        token = strtok(NULL, ",");
+        if (token) strncpy(p.diagnosis, token, sizeof(p.diagnosis) - 1);
+
+        token = strtok(NULL, ",");
+        if (token) p.room_number = atoi(token);
+
+        (*patient_ptr)[(*totalPatients)++] = p;
+    }
+
+    fclose(file);
+    return 1;
+}
+
+
+
+/**
+ * write patient data to file
+ * @param patient_ptr array of patients
+ * @param totalPatients total number of patients
+ */
+void writeToFile(struct Patient *patient_ptr, int totalPatients) {
+    FILE *file = fopen("patients.txt", "w");
+    if (file == NULL) {
+        printf("error opening file");
+        return ;
+    }
+    for (int i = 0; i < totalPatients; i++) {
+        fprintf(file, "%d,%s,%d,%s,%d\n",
+            patient_ptr[i].patient_id,
+            patient_ptr[i].name,
+            patient_ptr[i].age,
+            patient_ptr[i].diagnosis,
+            patient_ptr[i].room_number);
+    }
+    fclose(file);
+}
