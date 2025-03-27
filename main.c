@@ -62,6 +62,57 @@ struct Patient {
 // struct Patient patients[50];//size: 5800 ; each patient: 116
 struct Patient *patient_ptr;
 
+//each node
+struct Node {
+    struct Patient patient;
+    struct Node *next;
+};
+
+/**
+ * adding to node.
+ * @param patient
+ * @return
+ */
+struct Node* createNode(struct Patient patient) {
+    struct Node* newNode = (struct Node*)malloc(sizeof(struct Node));
+    if (newNode == NULL) {
+        printf("Memory allocation failed!\n");
+        exit(1);
+    }
+    newNode->patient = patient;
+    newNode->next = NULL;
+    return newNode;
+}
+
+void insertAtBeginning(struct Node** head, struct Patient patient) {
+    struct Node* newNode = createNode(patient);
+    newNode->next = *head;
+    *head = newNode;
+}
+
+// Function to insert a node at the end
+void insertAtEnd(struct Node** head, struct Patient patient) {
+    struct Node* newNode = createNode(patient);
+
+    if (*head == NULL) {
+        *head = newNode;
+        return;
+    }
+
+    struct Node* temp = *head;
+    while (temp->next != NULL) {
+        temp = temp->next;
+    }
+    temp->next = newNode;
+}
+
+void deleteNode(struct Node** head, struct Patient patient) {
+    struct Node* temp = *head;
+    if (temp == NULL) {
+        return;
+    }
+
+}
 // MAIN METHOD
 /**
  * Main method. Beginning of the flow of control.
