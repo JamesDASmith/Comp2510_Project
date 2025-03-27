@@ -33,6 +33,7 @@ int     read_from_patient_file();
 int     read_from_schedule_file();
 void    write_to_patient_file();
 void    write_to_schedule_file();
+int     compare_patient();
 
 // VARIABLE DECLARATIONS
 int totalPatients = 0;
@@ -84,6 +85,7 @@ struct Node* createNode(struct Patient patient) {
     return newNode;
 }
 
+
 void insertAtBeginning(struct Node** head, struct Patient patient) {
     struct Node* newNode = createNode(patient);
     newNode->next = *head;
@@ -106,8 +108,9 @@ void insertAtEnd(struct Node** head, struct Patient patient) {
     temp->next = newNode;
 }
 
-void deleteNode(struct Node** head, struct Patient patient) {
+void deletePatientNode(struct Node** head, struct Patient patient) {
     struct Node* temp = *head;
+    struct Node* prev = NULL;
     if (temp == NULL) {
         return;
     }
