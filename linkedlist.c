@@ -28,9 +28,9 @@ void    organizePatientList();
 void    dischargePatient();
 void    manageDrSchedule();
 void    toLowerString();
-int     read_from_patient_file();
+int     read_from_patient_file_ll();
 int     read_from_schedule_file();
-void    write_to_patient_file();
+void    write_to_patient_file_ll();
 void    write_to_schedule_file();
 void    create_node();
 void    delete_node();
@@ -173,6 +173,10 @@ void delete_node(struct Node** head, struct Node* target, int* totalPatients) {
  */
 int main(void)
 {
+    if (read_from_patient_file_ll(&head, &totalPatients) == 0) {
+        printf("Starting with empty patient database.\n");
+    }
+    read_from_schedule_file(&schedule);
     menu();
     return 0;
 }
@@ -213,6 +217,7 @@ void menu() {
                 manageDrSchedule();
             case 6:
                 printf("Exiting...\n");
+                write_to_patient_file_ll(head);
             break;
             default:
                 printf("Invalid choice! Try again.\n");
@@ -638,13 +643,14 @@ void toLowerString(char *str) {
 }
 
 /**
- * read from file
- * @param patient_ptr pointer to patient array
- * @return 1 if file is read successfully, 0 otherwise
+ * read from patient file
+ * @param head
+ * @param totalPatients
+ * @return
  */
-int read_from_patient_file(struct Patient **patient_ptr, int *totalPatients) {
+int read_from_patient_file_ll(struct Node **head, int *totalPatients) {
     *totalPatients = 0;
-    FILE *file = fopen("patients.txt", "r");
+    FILE *file = fopen("patients_ll.txt", "r");
     if (file == NULL) {
         printf("File not found.\n");
         return 0;
@@ -653,17 +659,6 @@ int read_from_patient_file(struct Patient **patient_ptr, int *totalPatients) {
     char buffer[200];
 
     while (fgets(buffer, sizeof(buffer), file)) {
-        if (*totalPatients >= max_patients) {
-            max_patients += 10;
-            struct Patient *tmp = realloc(*patient_ptr, max_patients * sizeof(struct Patient));
-            if (!tmp) {
-                printf("Memory allocation error while reading file.\n");
-                fclose(file);
-                return 0;
-            }
-            *patient_ptr = tmp;
-        }
-
         buffer[strcspn(buffer, "\n")] = 0;
 
         struct Patient p = {};
@@ -684,7 +679,7 @@ int read_from_patient_file(struct Patient **patient_ptr, int *totalPatients) {
         token = strtok(NULL, ",");
         if (token) p.room_number = atoi(token);
 
-        (*patient_ptr)[(*totalPatients)++] = p;
+        insert_at_end(head, p, totalPatients);
     }
 
     fclose(file);
@@ -696,23 +691,32 @@ int read_from_patient_file(struct Patient **patient_ptr, int *totalPatients) {
  * @param patient_ptr array of patients
  * @param totalPatients total number of patients
  */
-void write_to_patient_file(struct Patient *patient_ptr, int totalPatients) {
-    FILE *file = fopen("patients.txt", "w");
+void write_to_patient_file_ll(struct Node* head) {
+    FILE *file = fopen("patients_ll.txt", "w");
     if (file == NULL) {
         printf("error opening file");
         return ;
     }
-    for (int i = 0; i < totalPatients; i++) {
+    struct Node* current = head;
+
+    while (current != NULL) {
         fprintf(file, "%d,%s,%d,%s,%d\n",
-            patient_ptr[i].patient_id,
-            patient_ptr[i].name,
-            patient_ptr[i].age,
-            patient_ptr[i].diagnosis,
-            patient_ptr[i].room_number);
+            current->patient.patient_id,
+            current->patient.name,
+            current->patient.age,
+            current->patient.diagnosis,
+            current->patient.room_number);
+
+        current = current->next;
     }
     fclose(file);
 }
 
+/**
+ * read from doctor schedule file
+ * @param schedule
+ * @return
+ */
 int read_from_schedule_file(char schedule[7][3][50]) {
     FILE *file = fopen("schedule.txt", "r");
     if (file == NULL) {
@@ -737,6 +741,7 @@ int read_from_schedule_file(char schedule[7][3][50]) {
         }
     }
     fclose(file);
+    return 1;
 }
 
 /**
