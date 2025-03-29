@@ -34,6 +34,10 @@ int     read_from_schedule_file();
 void    write_to_patient_file();
 void    write_to_schedule_file();
 int     compare_patient();
+void    create_node();
+void    delete_patient_node();
+void    insert_at_beginning();
+void    insert_at_end();
 
 // VARIABLE DECLARATIONS
 int totalPatients = 0;
@@ -69,6 +73,8 @@ struct Node {
     struct Node *next;
 };
 
+struct Node *head = NULL;
+
 /**
  * adding to node.
  * @param patient
@@ -90,7 +96,7 @@ struct Node* createNode(struct Patient patient) {
  * @param head
  * @param patient
  */
-void insertAtBeginning(struct Node** head, struct Patient patient, int *totalPatients) {
+void insert_at_beginning(struct Node** head, struct Patient patient, int *totalPatients) {
     struct Node* newNode = createNode(patient);
     newNode->next = *head;
     *head = newNode;
@@ -102,7 +108,7 @@ void insertAtBeginning(struct Node** head, struct Patient patient, int *totalPat
  * @param head
  * @param patient
  */
-void insertAtEnd(struct Node** head, struct Patient patient, int *totalPatients) {
+void insert_at_end(struct Node** head, struct Patient patient, int *totalPatients) {
     struct Node* newNode = createNode(patient);
 
     if (*head == NULL) {
@@ -125,7 +131,7 @@ void insertAtEnd(struct Node** head, struct Patient patient, int *totalPatients)
  * @param patient
  * @param *totalPatients
  */
-void deletePatientNode(struct Node** head, struct Patient patient, int *totalPatients) {
+void delete_patient_node(struct Node** head, struct Patient patient, int *totalPatients) {
     struct Node* temp = *head;
     struct Node* prev = NULL;
 
