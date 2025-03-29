@@ -85,15 +85,24 @@ struct Node* createNode(struct Patient patient) {
     return newNode;
 }
 
-
-void insertAtBeginning(struct Node** head, struct Patient patient) {
+/**
+ * insert node at beginning of linked list
+ * @param head
+ * @param patient
+ */
+void insertAtBeginning(struct Node** head, struct Patient patient, int *totalPatients) {
     struct Node* newNode = createNode(patient);
     newNode->next = *head;
     *head = newNode;
+    (*totalPatients)++;
 }
 
-// Function to insert a node at the end
-void insertAtEnd(struct Node** head, struct Patient patient) {
+/**
+ * Insert node at the end of linked list
+ * @param head
+ * @param patient
+ */
+void insertAtEnd(struct Node** head, struct Patient patient, int *totalPatients) {
     struct Node* newNode = createNode(patient);
 
     if (*head == NULL) {
@@ -106,16 +115,43 @@ void insertAtEnd(struct Node** head, struct Patient patient) {
         temp = temp->next;
     }
     temp->next = newNode;
+    (*totalPatients)++;
+
 }
 
-void deletePatientNode(struct Node** head, struct Patient patient) {
+/**
+ * delete specific node
+ * @param head
+ * @param patient
+ * @param *totalPatients
+ */
+void deletePatientNode(struct Node** head, struct Patient patient, int *totalPatients) {
     struct Node* temp = *head;
     struct Node* prev = NULL;
+
     if (temp == NULL) {
         return;
     }
 
+    while (temp != NULL && temp->patient.patient_id != patient.patient_id) {
+        prev = temp;
+        temp = temp->next;
+    }
+
+    if (temp == NULL) {
+        return;
+    }
+
+    if (prev == NULL) {
+        *head = temp->next;
+    } else {
+        prev->next = temp->next;
+    }
+
+    free(temp);
+    (*totalPatients)--;
 }
+
 // MAIN METHOD
 /**
  * Main method. Beginning of the flow of control.
