@@ -23,7 +23,6 @@ void    menu();
 void    printPatient();
 void    addPatient();
 void    viewPatients();
-int     searchPatientByName();
 void    searchPatients();
 void    organizePatientList();
 void    dischargePatient();
@@ -34,7 +33,7 @@ int     read_from_schedule_file();
 void    write_to_patient_file();
 void    write_to_schedule_file();
 void    create_node();
-void    delete_patient_node();
+void    delete_node();
 void    insert_at_beginning();
 void    insert_at_end();
 void    view_patient_ll();
@@ -67,9 +66,6 @@ struct Patient {
     char diagnosis[50];
     int room_number;
 };
-
-// struct Patient patients[50];//size: 5800 ; each patient: 116
-struct Patient *patient_ptr;
 
 //each node
 struct Node {
@@ -130,36 +126,43 @@ void insert_at_end(struct Node** head, struct Patient patient, int *totalPatient
 }
 
 /**
- * delete specific node
+ * delete node from linked list
  * @param head
- * @param patient
- * @param *totalPatients
+ * @param target
+ * @param totalPatients
  */
-void delete_patient_node(struct Node** head, struct Patient patient, int *totalPatients) {
-    struct Node* temp = *head;
+void delete_node(struct Node** head, struct Node* target, int* totalPatients) {
+    if (head == NULL || *head == NULL || target == NULL) {
+        printf("Invalid operation. Nothing to delete.\n");
+        return;
+    }
+
+    struct Node* current = *head;
     struct Node* prev = NULL;
 
-    if (temp == NULL) {
+    // Traverse to find the target node
+    while (current != NULL && current != target) {
+        prev = current;
+        current = current->next;
+    }
+
+    // If target not found
+    if (current == NULL) {
+        printf("Patient not found\n");
         return;
     }
 
-    while (temp != NULL && temp->patient.patient_id != patient.patient_id) {
-        prev = temp;
-        temp = temp->next;
-    }
-
-    if (temp == NULL) {
-        return;
-    }
-
+    // If node to delete is the head
     if (prev == NULL) {
-        *head = temp->next;
+        *head = current->next;
     } else {
-        prev->next = temp->next;
+        prev->next = current->next;
     }
 
-    free(temp);
+    free(current);
     (*totalPatients)--;
+
+    printf("Patient discharged successfully.\n");
 }
 
 // MAIN METHOD
@@ -170,18 +173,7 @@ void delete_patient_node(struct Node** head, struct Patient patient, int *totalP
  */
 int main(void)
 {
-    patient_ptr = (struct Patient*)malloc(max_patients * sizeof(struct Patient));
-    if (patient_ptr == NULL) {
-        printf("Memory allocation failed in main()\n");
-        return 1;
-    }
-    if (read_from_patient_file(&patient_ptr, &totalPatients) == 0) {
-        printf("Starting with empty patient database.\n");
-    }
-    read_from_schedule_file(&schedule);
     menu();
-    write_to_patient_file(patient_ptr, totalPatients);
-    free(patient_ptr);
     return 0;
 }
 
@@ -209,7 +201,6 @@ void menu() {
                 addPatient();
             break;
             case 2:
-                // viewPatients();              //view from array
                 view_patient_ll();              //view from linked list
             break;
             case 3:
@@ -244,24 +235,13 @@ void addPatient() {
 
     struct Patient patient = {};
 
-    // Checks room for more patients at the hospital
-    if (totalPatients >= max_patients) {
-        //expand memory for patient_ptr here
-        max_patients += 10;
-        struct Patient *tmp = realloc(patient_ptr, max_patients * sizeof(struct Patient));
-        if (tmp == NULL) {
-            printf("Memory allocation failed in addPatient()\n");
-        }
-        patient_ptr = tmp;
-    }
-
     // Ensures patient ID is successfully input, continues to prompt in case of invalid input.
     do {
         printf("Enter Patient ID: \n");
         scanf("%d", &id);
         getchar();
 
-        if (id <= 0 || idExists(id, patient_ptr, totalPatients) != -1) {
+        if (id <= 0 || idExists(id) == 1) {
             printf("Invalid or duplicate ID\n");
             printf("Re-Enter\n");
         }else {
@@ -328,28 +308,10 @@ void addPatient() {
         }
     }while (status == 0);
 
-    //with pointer
-    // patient_ptr[totalPatients] = patient;
-    // totalPatients++;
-
     //with linked list
     insert_at_end(&head, patient, &totalPatients);
 
     printf("Patient Added Successfully\n");
-}
-
-/**
- * Prints the list of patients and their information
- */
-void viewPatients() {
-    printf("Printing Patient Information...\n");
-    for (int i = 0; i < totalPatients; i++) {
-        printf("--------------------------\n");
-        printPatient(i);
-    }
-    printf("--------------------------\n");
-    printf("End of List\n");
-    printf("--------------------------\n");
 }
 
 /**
@@ -398,16 +360,6 @@ void searchPatients() {
         case 1:
             printf("Enter Patient ID:");
             scanf("%d", &id);
-            // //with array
-            // index = idExists(id, patient_ptr, totalPatients);
-            // if (index != -1) {
-            //     printf("--------------------------\n");
-            //     printPatient(index);
-            //     printf("--------------------------\n");
-            // }else {
-            //     printf("No patients associated with ID %d.\n", id);
-            // }
-
             //with linked list
             struct Node* patient = search_patient_by_id_ll(id);
             if (patient == NULL) {
@@ -422,16 +374,6 @@ void searchPatients() {
             printf("Enter Patient Name:");
             fgets(name, 50, stdin);
             name[strcspn(name, "\n")] = 0;
-            // //with array
-            // index = searchPatientByName(name, patient_ptr, totalPatients);
-            // if (index == -1) {
-            //     printf("No patients with the name %s exists.\n", name);
-            // }else {
-            //     printf("--------------------------\n");
-            //     printPatient(index);
-            //     printf("--------------------------\n");
-            // }
-
             //with linked list
             struct Node* p = search_patient_by_name_ll(name);
             if (p == NULL) {
@@ -446,32 +388,6 @@ void searchPatients() {
             printf("Invalid Input. Terminating...\n");
         break;
     }
-
-}
-
-/**
- * Allows the user to search by name if a patient is checked into the hospital. If the patient does exist, the function
- * returns the index they can be found in the array. Else -1 is returned.
- *
- * @param name          - array of chars representing a patient's name.
- * @param patient_ptr      - pointer to an array of patients.
- * @param totalPatients - int representing the number of patients currently checked into the hospital.
- *
- * @return              - int representing the integer representing the index a patient can be found.
- */
-int searchPatientByName(char name[], struct Patient *patient_ptr, int totalPatients) {
-    if (strlen(name) == 0) {
-        printf("name cannot be empty.\n");
-    }else {
-        toLowerString(name);
-        for (int i = 0; i < totalPatients; i++) {
-            if (strcmp(name, patient_ptr[i].name) == 0) {
-                return i;
-            }
-        }
-    }
-
-    return -1;
 
 }
 
@@ -517,7 +433,6 @@ struct Node* search_patient_by_name_ll(char name[]) {
  */
 struct Node* search_patient_by_id_ll(int id) {
     struct Node* current = head;
-
     while (current != NULL) {
         if (current->patient.patient_id == id) {
             return current;
@@ -548,14 +463,13 @@ void dischargePatient() {
         case 1: // Checks Patient ID, removing them if found.
             printf("Enter ID:\n");
             scanf("%d", &id);
-            index = idExists(id, patient_ptr, totalPatients);
-            if (index != -1) {
-                patient_ptr[index] = def;
-                organizePatientList(index, patient_ptr, totalPatients);
-                totalPatients --;
-                printf("Patient discharged successfully.\n");
+            struct Node* patient = search_patient_by_id_ll(id);
+            if (patient == NULL) {
+                printf("Patient not found\n");
             }else {
-                printf("Patient with ID %d does not exist.\n", id);
+                printf("--------------------------\n");
+                delete_node(&head, patient, &totalPatients);
+                printf("--------------------------\n");
             }
             break;
 
@@ -564,14 +478,13 @@ void dischargePatient() {
             fgets(name, 50, stdin);
             name[strcspn(name, "\n")] = 0;
             toLowerString(name);
-            index = searchPatientByName(name, patient_ptr, totalPatients);
-            if (index != -1) {
-                patient_ptr[index] = def;
-                organizePatientList(index, patient_ptr, totalPatients);
-                totalPatients --;
-                printf("Patient discharged successfully.\n");
+            struct Node* p = search_patient_by_name_ll(name);
+            if (p == NULL) {
+                printf("Patient not found\n");
             }else {
-                printf("Patient with name %s does not exist.\n", name);
+                printf("--------------------------\n");
+                delete_node(&head, p, &totalPatients);
+                printf("--------------------------\n");
             }
             break;
         default:
@@ -691,63 +604,16 @@ void manageDrSchedule() {
 
 
 // SUPPORT METHODS
-/**
- * Checks if a passed in patient ID exists in the system.
- * If it does the index of the patient is returned, else -1 is returned.
- *
- * @param id        - the ID you would like to check to see if it exists in the system.
- * @param patient_ptr  - pointer to the array of patients in the system.
- * @param size      - the size of the patient array the method will check through.
- * @return int      - representing the index of the patient whose ID was passed into the method. If no patient is found
- *                  then -1 is returned instead.
- */
-int idExists(int id, struct Patient *patient_ptr, int size) {
-    for (int i = 0; i < size; i++ ) {
-        if (patient_ptr[i].patient_id == id) {
-            return i;
+int idExists(int id) {
+    struct Node* current = head;
+    while (current != NULL) {
+        if (current->patient.patient_id == id) {
+            return 1;
         }
+        current = current->next;
     }
-    return -1;
+    return 0;
 }
-
-/**
- * Organizes the list of patients in the hotel.
- *
- * @param index         - index of an incoming patient in the array
- * @param patient_ptr      - pointer to ab array of patients
- * @param totalPatients - int representing the total number of patients checked into the hotel
- */
-void organizePatientList(int index, struct Patient *patient_ptr, int totalPatients) {
-    struct Patient def = {};
-    for (int i = index; i < totalPatients - 1; i++  ) {
-        patient_ptr[i] = patient_ptr[i + 1];
-    }
-    patient_ptr[totalPatients - 1] = def;
-}
-
-/**
- * Prints the information of the patient found at the passed in index.
- * This information includes their: ID,
- *                                  Name,
- *                                  Age,
- *                                  Diagnosis, and
- *                                  Room Number.
- *
- * @param index int - representing the index of the patient's location in the struct array.
- */
-void printPatient(int index) {
-    printf("Patient ID:");
-    printf("%d\n", patient_ptr[index].patient_id);
-    printf("Name:");
-    printf("%s\n", patient_ptr[index].name);
-    printf("Age:");
-    printf("%d\n", patient_ptr[index].age);
-    printf("Diagnosis:");
-    printf("%s\n", patient_ptr[index].diagnosis);
-    printf("Room Number:");
-    printf("%d\n", patient_ptr[index].room_number);
-}
-
 /**
  * print patient from linked list
  * @param patient
