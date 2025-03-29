@@ -33,11 +33,14 @@ int     read_from_patient_file();
 int     read_from_schedule_file();
 void    write_to_patient_file();
 void    write_to_schedule_file();
-int     compare_patient();
 void    create_node();
 void    delete_patient_node();
 void    insert_at_beginning();
 void    insert_at_end();
+void    view_patient_ll();
+int     search_patient_by_name_ll();
+int     search_patient_by_id_ll();
+
 
 // VARIABLE DECLARATIONS
 int totalPatients = 0;
@@ -76,7 +79,7 @@ struct Node {
 struct Node *head = NULL;
 
 /**
- * adding to node.
+ * create a new node
  * @param patient
  * @return
  */
@@ -113,6 +116,7 @@ void insert_at_end(struct Node** head, struct Patient patient, int *totalPatient
 
     if (*head == NULL) {
         *head = newNode;
+        (*totalPatients)++;
         return;
     }
 
@@ -122,7 +126,6 @@ void insert_at_end(struct Node** head, struct Patient patient, int *totalPatient
     }
     temp->next = newNode;
     (*totalPatients)++;
-
 }
 
 /**
@@ -205,7 +208,8 @@ void menu() {
                 addPatient();
             break;
             case 2:
-                viewPatients();
+                // viewPatients();              //view from array
+                view_patient_ll();              //view from linked list
             break;
             case 3:
                 searchPatients();
@@ -324,9 +328,12 @@ void addPatient() {
     }while (status == 0);
 
     //with pointer
-    patient_ptr[totalPatients] = patient;
+    // patient_ptr[totalPatients] = patient;
+    // totalPatients++;
 
-    totalPatients++;
+    //with linked list
+    insert_at_end(&head, patient, &totalPatients);
+
     printf("Patient Added Successfully\n");
 }
 
@@ -345,6 +352,34 @@ void viewPatients() {
 }
 
 /**
+ * print patient list with linkedlist
+ */
+void view_patient_ll() {
+    printf("Printing Patient Information...\n");
+    struct Node* current = head;
+    int i = 0;
+
+    while (current != NULL) {
+        printf("--------------------------\n");
+        printf("Patient #%d\n", i + 1);
+        printf("Patient ID: %d\n", current->patient.patient_id);
+        printf("Name: %s\n", current->patient.name);
+        printf("Age: %d\n", current->patient.age);
+        printf("Diagnosis: %s\n", current->patient.diagnosis);
+        printf("Room Number: %d\n", current->patient.room_number);
+        current = current->next;
+        i++;
+    }
+
+    if (i == 0) {
+        printf("No patients in the system.\n");
+    }
+
+    printf("--------------------------\n");
+    printf("End of List\n");
+    printf("--------------------------\n");
+}
+/**
  * Allows user to search for a patient by either their ID or by Name, printing their information if found.
  */
 void searchPatients() {
@@ -361,29 +396,29 @@ void searchPatients() {
     switch (selection) {
         case 1:
             printf("Enter Patient ID:");
-        scanf("%d", &id);
-        index = idExists(id, patient_ptr, totalPatients);
-        if (index != -1) {
-            printf("--------------------------\n");
-            printPatient(index);
-            printf("--------------------------\n");
-        }else {
-            printf("No patients associated with ID %d.\n", id);
-        }
-        break;
+            scanf("%d", &id);
+            index = idExists(id, patient_ptr, totalPatients);
+            if (index != -1) {
+                printf("--------------------------\n");
+                printPatient(index);
+                printf("--------------------------\n");
+            }else {
+                printf("No patients associated with ID %d.\n", id);
+            }
+            break;
         case 2:
             printf("Enter Patient Name:");
-        fgets(name, 50, stdin);
-        name[strcspn(name, "\n")] = 0;
-        index = searchPatientByName(name, patient_ptr, totalPatients);
-        if (index == -1) {
-            printf("No patients with the name %s exists.\n", name);
-        }else {
-            printf("--------------------------\n");
-            printPatient(index);
-            printf("--------------------------\n");
-        }
-        break;
+            fgets(name, 50, stdin);
+            name[strcspn(name, "\n")] = 0;
+            index = searchPatientByName(name, patient_ptr, totalPatients);
+            if (index == -1) {
+                printf("No patients with the name %s exists.\n", name);
+            }else {
+                printf("--------------------------\n");
+                printPatient(index);
+                printf("--------------------------\n");
+            }
+            break;
         default:
             printf("Invalid Input. Terminating...\n");
         break;
@@ -416,6 +451,41 @@ int searchPatientByName(char name[], struct Patient *patient_ptr, int totalPatie
     return -1;
 
 }
+
+/**
+ * search patient by name with a linked list
+ * @param name
+ * @param head
+ * @param totalPatients
+ * @return
+ */
+int search_patient_by_name_ll(char name[], struct Node* head) {
+    if (strlen(name) == 0) {
+        printf("Name cannot be empty.\n");
+        return -1;
+    }
+
+    toLowerString(name);
+
+    struct Node* current = head;
+    int index = 0;
+
+    while (current != NULL) {
+        char patientNameLower[50];
+        strcpy(patientNameLower, current->patient.name);
+        toLowerString(patientNameLower);  // assuming this makes a string lowercase
+
+        if (strcmp(name, patientNameLower) == 0) {
+            return index;
+        }
+
+        current = current->next;
+        index++;
+    }
+
+    return -1; // not found
+}
+
 
 /**
  * Prompts the user for information about a patient (either name or ID) and removes them from the patient list.
