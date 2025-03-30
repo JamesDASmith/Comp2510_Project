@@ -3,6 +3,10 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define SCHEDULE_DAYS   7
+#define SCHEDULE_SHIFTS 3
+#define SCHEDULE_CHARS  50
+
 // INFORMATION
 /**
  * The following program was designed to provide the fundamental groundwork for a hospital management system, allowing
@@ -33,6 +37,9 @@ int     read_from_patient_file();
 int     read_from_schedule_file();
 void    write_to_patient_file();
 void    write_to_schedule_file();
+int     isNameValidInput(const char *name);
+int     isIntegerValidInput(const int num);
+void    freeMemory();
 
 // VARIABLE DECLARATIONS
 int totalPatients = 0;
@@ -48,7 +55,10 @@ const int SATURDAY = 6;
 const int SUNDAY = 7;
 const int DELETE = 666;
 
-char schedule[7][3][50];
+const char patient_file_path[] = "patients.txt";
+const char schedule_file_path[] = "schedule.txt";
+
+char schedule[SCHEDULE_DAYS][SCHEDULE_SHIFTS][SCHEDULE_CHARS];
 
 //struct representing each patient
 struct Patient {
@@ -83,6 +93,7 @@ int main(void)
     menu();
     write_to_patient_file(patient_ptr, totalPatients);
     free(patient_ptr);
+    freeMemory();
     return 0;
 }
 
@@ -161,7 +172,7 @@ void addPatient() {
         scanf("%d", &id);
         getchar();
 
-        if (id <= 0 || idExists(id, patient_ptr, totalPatients) != -1) {
+        if (!isIntegerValidInput(id) || idExists(id, patient_ptr, totalPatients) != -1) {
             printf("Invalid or duplicate ID\n");
             printf("Re-Enter\n");
         }else {
@@ -176,6 +187,13 @@ void addPatient() {
         printf("Enter Patient Name: \n");
         fgets(patient.name, 50, stdin);
         patient.name[strcspn(patient.name, "\n")] = 0;
+
+        while (!isNameValidInput(patient.name)) {
+            printf("Invalid Patient Name. Reenter\n");
+            fgets(patient.name, 50, stdin);
+            patient.name[strcspn(patient.name, "\n")] = 0;
+        }
+
         if (strlen(patient.name) == 0) {
             printf("Name cannot be empty.\n");
             printf("Re-Enter\n");
@@ -190,7 +208,7 @@ void addPatient() {
     do {
         printf("Enter Age: \n");
         scanf("%d", &age);
-        if (age <= 0) {
+        if (!isIntegerValidInput(age)) {
             printf("Invalid age!\n");
             printf("Re-Enter\n");
         }else {
@@ -219,7 +237,7 @@ void addPatient() {
     do {
         printf("Enter Room Number: \n");
         scanf("%d", &room_number);
-        if (room_number < 0) {
+        if (!isIntegerValidInput(room_number)) {
             printf("Invalid room number.\n");
             printf("Re-Enter.\n");
         }else {
@@ -267,6 +285,12 @@ void searchPatients() {
         case 1:
             printf("Enter Patient ID:");
             scanf("%d", &id);
+
+            if (!isIntegerValidInput(id))
+            {
+                printf("Invalid ID!\n");
+                return;
+            }
             //with array
             index = idExists(id, patient_ptr, totalPatients);
             if (index != -1) {
@@ -281,6 +305,12 @@ void searchPatients() {
             printf("Enter Patient Name:");
             fgets(name, 50, stdin);
             name[strcspn(name, "\n")] = 0;
+
+            if (!isNameValidInput(name)) {
+                printf("Invalid Patient Name. Exiting...\n");
+                return;
+            }
+
             index = searchPatientByName(name, patient_ptr, totalPatients);
             if (index == -1) {
                 printf("No patients with the name %s exists.\n", name);
@@ -343,6 +373,12 @@ void dischargePatient() {
         case 1: // Checks Patient ID, removing them if found.
             printf("Enter ID:\n");
             scanf("%d", &id);
+
+            if (!isIntegerValidInput(id)) {
+                printf("Invalid ID!\n");
+                return;
+            }
+
             index = idExists(id, patient_ptr, totalPatients);
             if (index != -1) {
                 patient_ptr[index] = def;
@@ -358,6 +394,12 @@ void dischargePatient() {
             printf("Enter Name: \n");
             fgets(name, 50, stdin);
             name[strcspn(name, "\n")] = 0;
+
+            if (!isNameValidInput(name)) {
+                printf("Invalid Patient Name. Terminating...\n");
+                return;
+            }
+
             toLowerString(name);
             index = searchPatientByName(name, patient_ptr, totalPatients);
             if (index != -1) {
@@ -403,10 +445,13 @@ void manageDrSchedule() {
                 fgets(name, sizeof(name), stdin);
                 name[strcspn(name, "\n")] = 0;
 
-                if (strlen(name) == 0) {
+                if (!isNameValidInput(name) || strlen(name) == 0)
+                {
                     printf("Name cannot be empty.\n");
                     printf("Re-Enter\n");
-                } else {
+                }
+                else
+                {
                     status = 1;
                 }
             } while (status != 1);
@@ -423,7 +468,7 @@ void manageDrSchedule() {
             scanf("%d", &shiftDay);
             getchar();
 
-            if(shiftDay > 7 || shiftDay < 1) {
+            if(shiftDay > 7 || shiftDay < 1 && isIntegerValidInput(shiftDay)) {
                 printf("Invalid Input. Terminating...\n");
                 break;
             }
@@ -436,7 +481,7 @@ void manageDrSchedule() {
             scanf("%d", &shiftTime);
             getchar();
 
-            if(shiftTime > 3 || shiftTime < 1) {
+            if(shiftTime > 3 || shiftTime < 1 && isIntegerValidInput(shiftTime)) {
                 printf("Invalid Input. Terminating...\n");
                 break;
         }
@@ -561,7 +606,7 @@ void toLowerString(char *str) {
  */
 int read_from_patient_file(struct Patient **patient_ptr, int *totalPatients) {
     *totalPatients = 0;
-    FILE *file = fopen("patients.txt", "r");
+    FILE *file = fopen(patient_file_path, "r");
     if (file == NULL) {
         printf("File not found.\n");
         return 0;
@@ -614,7 +659,7 @@ int read_from_patient_file(struct Patient **patient_ptr, int *totalPatients) {
  * @param totalPatients total number of patients
  */
 void write_to_patient_file(struct Patient *patient_ptr, int totalPatients) {
-    FILE *file = fopen("patients.txt", "w");
+    FILE *file = fopen(patient_file_path, "w");
     if (file == NULL) {
         printf("error opening file");
         return ;
@@ -631,7 +676,7 @@ void write_to_patient_file(struct Patient *patient_ptr, int totalPatients) {
 }
 
 int read_from_schedule_file(char schedule[7][3][50]) {
-    FILE *file = fopen("schedule.txt", "r");
+    FILE *file = fopen(schedule_file_path, "r");
     if (file == NULL) {
         printf("File not found.\n");
     }
@@ -661,7 +706,7 @@ int read_from_schedule_file(char schedule[7][3][50]) {
  * @param schedule  array o fdoctor schedule
  */
 void write_to_schedule_file(char schedule[7][3][50]) {
-    FILE *file = fopen("schedule.txt", "w");
+    FILE *file = fopen(schedule_file_path, "w");
     if (file == NULL) {
         printf("error opening file");
     }
@@ -671,4 +716,48 @@ void write_to_schedule_file(char schedule[7][3][50]) {
         }
     }
     fclose(file);
+}
+
+/**
+ *
+ * @param name incoming name to check if valid
+ * @return 1 if valid input, else 0
+ */
+int isNameValidInput(const char *name)
+{
+    if (strlen(name) <= 0 || strpbrk(name, "0123456789!@#$%^&*()") == NULL) {
+        return 1; // valid input
+    }
+    return 0; // invalid input
+}
+
+/**
+ *
+ * @param num incoming number to check validity
+ * @return 1 if valid, else 0
+ */
+int isIntegerValidInput(const int num)
+{
+    if (num >= 0)
+    {
+        return 1;
+    }
+    return 0;
+}
+
+
+void freeMemory()
+{
+    free(patient_file_path);
+    free(schedule_file_path);
+    free(patient_ptr);
+
+    for (int h = 0; h < SCHEDULE_DAYS; h++) {
+        for (int i=0; i < SCHEDULE_SHIFTS; i++) {
+            for (int j = 0 ; j < SCHEDULE_CHARS; j++) {
+                free(schedule[h][i][j]);
+            }
+        }
+    }
+    free(schedule);
 }

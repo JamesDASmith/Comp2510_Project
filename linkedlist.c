@@ -58,6 +58,10 @@ const int DELETE = 666;
 
 char schedule[7][3][50];
 
+const char patient_file_path[] = "patients.txt";
+const char patientII_file_path[] = "patients_II.txt";
+const char schedule_file_path[] = "schedule.txt";
+
 //struct representing each patient
 struct Patient {
     int patient_id;
@@ -650,7 +654,7 @@ void toLowerString(char *str) {
  */
 int read_from_patient_file_ll(struct Node **head, int *totalPatients) {
     *totalPatients = 0;
-    FILE *file = fopen("patients_ll.txt", "r");
+    FILE *file = fopen(patientII_file_path, "r");
     if (file == NULL) {
         printf("File not found.\n");
         return 0;
@@ -692,7 +696,7 @@ int read_from_patient_file_ll(struct Node **head, int *totalPatients) {
  * @param totalPatients total number of patients
  */
 void write_to_patient_file_ll(struct Node* head) {
-    FILE *file = fopen("patients_ll.txt", "w");
+    FILE *file = fopen(patientII_file_path, "w");
     if (file == NULL) {
         printf("error opening file");
         return ;
@@ -718,7 +722,7 @@ void write_to_patient_file_ll(struct Node* head) {
  * @return
  */
 int read_from_schedule_file(char schedule[7][3][50]) {
-    FILE *file = fopen("schedule.txt", "r");
+    FILE *file = fopen(schedule_file_path, "r");
     if (file == NULL) {
         printf("File not found.\n");
     }
@@ -749,7 +753,7 @@ int read_from_schedule_file(char schedule[7][3][50]) {
  * @param schedule  array o fdoctor schedule
  */
 void write_to_schedule_file(char schedule[7][3][50]) {
-    FILE *file = fopen("schedule.txt", "w");
+    FILE *file = fopen(schedule_file_path, "w");
     if (file == NULL) {
         printf("error opening file");
     }
