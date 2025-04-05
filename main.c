@@ -7,6 +7,23 @@
 #define SCHEDULE_SHIFTS 3
 #define SCHEDULE_CHARS  50
 
+//create another file saving function to save these data.
+//1. Total number of patients admitted in a day, week, or month
+//int patient_added_current_session = 0;
+//every time a patient is added, increment this.
+//2. List of patients discharged on a specific day.
+//int patient_discharged_current_session = 0;
+//every time a patient is discharged, increment this.
+//3. Doctor utilization reports
+//iterate through the schedule array, find doctor's name
+//if doctor's name reappears, increment a counter by 1
+//4.room usage report:
+// int rooms[11];
+// when taking user input for rooms, increment the value saved at that index (i.e: patient in room 1, rooms[1]++)
+
+
+
+
 // INFORMATION
 /**
  * The following program was designed to provide the fundamental groundwork for a hospital management system, allowing
