@@ -5,23 +5,7 @@
 
 #define SCHEDULE_DAYS   7
 #define SCHEDULE_SHIFTS 3
-#define SCHEDULE_CHARS  50
-
-//create another file saving function to save these data.
-//1. Total number of patients admitted in a day, week, or month
-//int patient_added_current_session = 0;
-//every time a patient is added, increment this.
-//2. List of patients discharged on a specific day.
-//int patient_discharged_current_session = 0;
-//every time a patient is discharged, increment this.
-//3. Doctor utilization reports
-//iterate through the schedule array, find doctor's name
-//if doctor's name reappears, increment a counter by 1
-//4.room usage report:
-// int rooms[11];
-// when taking user input for rooms, increment the value saved at that index (i.e: patient in room 1, rooms[1]++)
-
-
+#define INPUT_CHARS     50
 
 
 // INFORMATION
@@ -57,6 +41,12 @@ void    write_to_schedule_file();
 int     isNameValidInput(const char *name);
 int     isIntegerValidInput(const int num);
 void    freeMemory();
+void    generateReportsMenu();
+void    generateAdmissionReport();
+void    generateDischargeReport();
+void    generateDoctorUtilizationReport();
+void    generateRoomUsageReport();
+void    saveReportToFile(const char *filename, const char *content);
 
 // VARIABLE DECLARATIONS
 int totalPatients = 0;
@@ -71,14 +61,23 @@ const int FRIDAY = 5;
 const int SATURDAY = 6;
 const int SUNDAY = 7;
 const int DELETE = 666;
+int patient_added_current_session = 0;
+int patient_discharged_current_session = 0;
+int rooms[50] = {0}; // Assuming room numbers up to 50
 
 const char patient_file_path[] = "patients.txt";
 const char schedule_file_path[] = "schedule.txt";
 
-char schedule[SCHEDULE_DAYS][SCHEDULE_SHIFTS][SCHEDULE_CHARS];
+const char admission_reports_file_path[] = "admission_report.txt";
+const char discharge_report_file_path[] = "discharge_report.txt";
+const char dr_report_file_path[] = "doctor_utilization.txt";
+const char room_report_file_path[] = "room_utilization.txt";
+
+char schedule[SCHEDULE_DAYS][SCHEDULE_SHIFTS][INPUT_CHARS];
 
 //struct representing each patient
-struct Patient {
+struct Patient
+{
     int patient_id;
     char name[50];
     int age;
@@ -99,11 +98,13 @@ struct Patient *patient_ptr;
 int main(void)
 {
     patient_ptr = (struct Patient*)malloc(max_patients * sizeof(struct Patient));
-    if (patient_ptr == NULL) {
+    if (patient_ptr == NULL)
+    {
         printf("Memory allocation failed in main()\n");
         return 1;
     }
-    if (read_from_patient_file(&patient_ptr, &totalPatients) == 0) {
+    if (read_from_patient_file(&patient_ptr, &totalPatients) == 0)
+    {
         printf("Starting with empty patient database.\n");
     }
     read_from_schedule_file(&schedule);
@@ -118,7 +119,8 @@ int main(void)
 /**
  * Represents the main menu from which a user can choose to use any of the programs functions.
  */
-void menu() {
+void menu()
+{
     int choice;
     do {
         printf("\nHospital Management System\n");
@@ -127,57 +129,106 @@ void menu() {
         printf("3. Search Patient by ID\n");
         printf("4. Discharge Patient\n");
         printf("5. Manage Doctor Schedule\n");
-        printf("6. Exit\n"
+        printf("6. Generate Reports\n");
+        printf("7. Exit\n"
                "Enter your choice: \n");
 
         scanf("%d", &choice);
         getchar(); // Consume newline
 
-        switch (choice) {
+        switch (choice)
+        {
             case 1:
                 addPatient();
-            break;
+                break;
             case 2:
                 viewPatients();
-            break;
+                break;
             case 3:
                 searchPatients();
-            break;
+                break;
             case 4:
                 dischargePatient();
-            break;
+                break;
             case 5:
                 manageDrSchedule();
+                break;
             case 6:
+                generateReportsMenu();
+                break;
+            case 7:
                 printf("Exiting...\n");
+                break;
+            default:
+                printf("Invalid choice! Try again.\n");
+        }
+    } while (choice != 7);
+    printf("Thanks for visiting!");
+}
+
+/**
+ * Represents the menu from which hospital reports are handled.
+ */
+void generateReportsMenu()
+{
+    int choice;
+    do {
+        printf("\nGenerate Reports\n");
+        printf("1. Admission Report\n");
+        printf("2. Discharge Report\n");
+        printf("3. Doctor Utilization Report\n");
+        printf("4. Room Usage Report\n");
+        printf("5. Back to Main Menu\n");
+        printf("Enter your choice: ");
+
+        scanf("%d", &choice);
+        getchar();
+
+        switch (choice)
+        {
+            case 1:
+                generateAdmissionReport();
+            break;
+            case 2:
+                generateDischargeReport();
+            break;
+            case 3:
+                generateDoctorUtilizationReport();
+            break;
+            case 4:
+                generateRoomUsageReport();
+            break;
+            case 5:
+                printf("Returning to main menu...\n");
             break;
             default:
                 printf("Invalid choice! Try again.\n");
         }
-    } while (choice != 6);
-    printf("Thanks for visiting!");
+    } while (choice != 5);
 }
-
 
 /**
  * Creates a patient, prompting a user for input.
  */
-void addPatient() {
+void addPatient()
+{
     int id;
-    char name[50];
+    char name[INPUT_CHARS];
     int age;
-    char diagnosis[50];
+    char diagnosis[INPUT_CHARS];
     int room_number;
     int status = 0;
 
     struct Patient patient = {};
 
     // Checks room for more patients at the hospital
-    if (totalPatients >= max_patients) {
+    if (totalPatients >= max_patients)
+    {
         //expand memory for patient_ptr here
         max_patients += 10;
         struct Patient *tmp = realloc(patient_ptr, max_patients * sizeof(struct Patient));
-        if (tmp == NULL) {
+        if (tmp == NULL)
+        {
             printf("Memory allocation failed in addPatient()\n");
         }
         patient_ptr = tmp;
@@ -189,14 +240,18 @@ void addPatient() {
         scanf("%d", &id);
         getchar();
 
-        if (!isIntegerValidInput(id) || idExists(id, patient_ptr, totalPatients) != -1) {
+        if (!isIntegerValidInput(id) ||
+            idExists(id, patient_ptr, totalPatients) != -1)
+        {
             printf("Invalid or duplicate ID\n");
             printf("Re-Enter\n");
-        }else {
+        }
+        else
+        {
             patient.patient_id = id;
             status = 1;
         }
-    }while (status == 0);
+    } while (status == 0);
     status = 0;
 
     // Ensures patient Name is successfully input, continues to prompt in case of invalid input.
@@ -205,19 +260,23 @@ void addPatient() {
         fgets(patient.name, 50, stdin);
         patient.name[strcspn(patient.name, "\n")] = 0;
 
-        while (!isNameValidInput(patient.name)) {
+        while (!isNameValidInput(patient.name))
+        {
             printf("Invalid Patient Name. Reenter\n");
             fgets(patient.name, 50, stdin);
             patient.name[strcspn(patient.name, "\n")] = 0;
         }
 
-        if (strlen(patient.name) == 0) {
+        if (strlen(patient.name) == 0)
+        {
             printf("Name cannot be empty.\n");
             printf("Re-Enter\n");
-        }else {
+        }
+        else
+        {
             status = 1;
         }
-    }while (status == 0);
+    } while (status == 0);
     toLowerString(patient.name);
     status = 0;
 
@@ -225,15 +284,18 @@ void addPatient() {
     do {
         printf("Enter Age: \n");
         scanf("%d", &age);
-        if (!isIntegerValidInput(age)) {
+        if (!isIntegerValidInput(age))
+        {
             printf("Invalid age!\n");
             printf("Re-Enter\n");
-        }else {
+        }
+        else
+        {
             patient.age = age;
             status = 1;
         }
         getchar();
-    }while (status == 0);
+    } while (status == 0);
     status = 0;
 
     // Ensures patient Diagnosis is successfully input, continues to prompt in case of invalid input.
@@ -241,30 +303,39 @@ void addPatient() {
         printf("Enter Diagnosis: \n");
         fgets(patient.diagnosis, 50, stdin);
         patient.diagnosis[strcspn(patient.diagnosis, "\n")] = 0;
-        if (strlen(patient.diagnosis) == 0) {
+        if (strlen(patient.diagnosis) == 0)
+        {
             printf("Diagnosis cannot be empty\n");
             printf("Re-Enter.\n");
-        }else {
+        }
+        else
+        {
             status = 1;
         }
-    }while (status == 0);
+    } while (status == 0);
     status = 0;
 
     // Ensures patient Room Number is successfully input, continues to prompt in case of invalid input.
     do {
         printf("Enter Room Number: \n");
         scanf("%d", &room_number);
-        if (!isIntegerValidInput(room_number)) {
+        if (!isIntegerValidInput(room_number))
+        {
             printf("Invalid room number.\n");
             printf("Re-Enter.\n");
-        }else {
+        }
+        else
+        {
             patient.room_number = room_number;
             status = 1;
         }
     }while (status == 0);
 
+    rooms[room_number]++;
+
      patient_ptr[totalPatients] = patient;
      totalPatients++;
+     patient_added_current_session++;
 
 
     printf("Patient Added Successfully\n");
@@ -273,9 +344,11 @@ void addPatient() {
 /**
  * Prints the list of patients and their information
  */
-void viewPatients() {
+void viewPatients()
+{
     printf("Printing Patient Information...\n");
-    for (int i = 0; i < totalPatients; i++) {
+    for (int i = 0; i < totalPatients; i++)
+    {
         printf("--------------------------\n");
         printPatient(i);
     }
@@ -287,7 +360,8 @@ void viewPatients() {
 /**
  * Allows user to search for a patient by either their ID or by Name, printing their information if found.
  */
-void searchPatients() {
+void searchPatients()
+{
     int selection;
     int id;
     int index;
@@ -298,7 +372,8 @@ void searchPatients() {
     scanf("%d", &selection);
     getchar();
 
-    switch (selection) {
+    switch (selection)
+    {
         case 1:
             printf("Enter Patient ID:");
             scanf("%d", &id);
@@ -310,28 +385,35 @@ void searchPatients() {
             }
             //with array
             index = idExists(id, patient_ptr, totalPatients);
-            if (index != -1) {
+            if (index != -1)
+            {
                 printf("--------------------------\n");
                 printPatient(index);
                 printf("--------------------------\n");
-            }else {
+            }
+            else
+            {
                 printf("No patients associated with ID %d.\n", id);
             }
             break;
         case 2:
             printf("Enter Patient Name:");
-            fgets(name, 50, stdin);
+            fgets(name, INPUT_CHARS, stdin);
             name[strcspn(name, "\n")] = 0;
 
-            if (!isNameValidInput(name)) {
+            if (!isNameValidInput(name))
+            {
                 printf("Invalid Patient Name. Exiting...\n");
                 return;
             }
 
             index = searchPatientByName(name, patient_ptr, totalPatients);
-            if (index == -1) {
+            if (index == -1)
+            {
                 printf("No patients with the name %s exists.\n", name);
-            }else {
+            }
+            else
+            {
                 printf("--------------------------\n");
                 printPatient(index);
                 printf("--------------------------\n");
@@ -354,13 +436,19 @@ void searchPatients() {
  *
  * @return              - int representing the integer representing the index a patient can be found.
  */
-int searchPatientByName(char name[], struct Patient *patient_ptr, int totalPatients) {
-    if (strlen(name) == 0) {
+int searchPatientByName(char name[], struct Patient *patient_ptr, int totalPatients)
+{
+    if (strlen(name) == 0)
+    {
         printf("name cannot be empty.\n");
-    }else {
+    }
+    else
+    {
         toLowerString(name);
-        for (int i = 0; i < totalPatients; i++) {
-            if (strcmp(name, patient_ptr[i].name) == 0) {
+        for (int i = 0; i < totalPatients; i++)
+        {
+            if (strcmp(name, patient_ptr[i].name) == 0)
+            {
                 return i;
             }
         }
@@ -373,10 +461,11 @@ int searchPatientByName(char name[], struct Patient *patient_ptr, int totalPatie
 /**
  * Prompts the user for information about a patient (either name or ID) and removes them from the patient list.
  */
-void dischargePatient() {
+void dischargePatient()
+{
     int choice;
     int id;
-    char name[50];
+    char name[INPUT_CHARS];
     int index;
     struct Patient def = {};
 
@@ -386,45 +475,58 @@ void dischargePatient() {
     printf("2. Discharge By Name.\n");
     scanf("%d", &choice);
     getchar();
-    switch (choice) {
+    switch (choice)
+    {
         case 1: // Checks Patient ID, removing them if found.
             printf("Enter ID:\n");
             scanf("%d", &id);
 
-            if (!isIntegerValidInput(id)) {
+            if (!isIntegerValidInput(id))
+            {
                 printf("Invalid ID!\n");
                 return;
             }
 
             index = idExists(id, patient_ptr, totalPatients);
-            if (index != -1) {
+            if (index != -1)
+            {
                 patient_ptr[index] = def;
                 organizePatientList(index, patient_ptr, totalPatients);
                 totalPatients --;
                 printf("Patient discharged successfully.\n");
-            }else {
+            }
+            else
+            {
                 printf("Patient with ID %d does not exist.\n", id);
             }
             break;
 
         case 2: // Checks Patient Name, removing them if found.
             printf("Enter Name: \n");
-            fgets(name, 50, stdin);
+            fgets(name, INPUT_CHARS, stdin);
             name[strcspn(name, "\n")] = 0;
 
-            if (!isNameValidInput(name)) {
+            if (!isNameValidInput(name))
+            {
                 printf("Invalid Patient Name. Terminating...\n");
                 return;
             }
 
             toLowerString(name);
             index = searchPatientByName(name, patient_ptr, totalPatients);
-            if (index != -1) {
+            if (index != -1)
+            {
                 patient_ptr[index] = def;
+
+                rooms[patient_ptr[index].room_number]--;
+                patient_discharged_current_session++;
+
                 organizePatientList(index, patient_ptr, totalPatients);
                 totalPatients --;
                 printf("Patient discharged successfully.\n");
-            }else {
+            }
+            else
+            {
                 printf("Patient with name %s does not exist.\n", name);
             }
             break;
@@ -438,7 +540,8 @@ void dischargePatient() {
 /**
  * Prompts users to various options to either add a doctor to the schedule, or view schedule
  */
-void manageDrSchedule() {
+void manageDrSchedule()
+{
     int choice;
 
     // Menu
@@ -449,9 +552,10 @@ void manageDrSchedule() {
     scanf("%d", &choice);
     getchar(); // Remove newline
 
-    switch (choice) {
+    switch (choice)
+    {
         case 1: // User chooses to add a doctor to the schedule.
-            char name[50];
+            char name[INPUT_CHARS];
             int shiftDay;
             int shiftTime;
             int status = 0;
@@ -485,7 +589,8 @@ void manageDrSchedule() {
             scanf("%d", &shiftDay);
             getchar();
 
-            if(shiftDay > 7 || shiftDay < 1 && isIntegerValidInput(shiftDay)) {
+            if(shiftDay > 7 || shiftDay < 1 && isIntegerValidInput(shiftDay))
+            {
                 printf("Invalid Input. Terminating...\n");
                 break;
             }
@@ -498,7 +603,8 @@ void manageDrSchedule() {
             scanf("%d", &shiftTime);
             getchar();
 
-            if(shiftTime > 3 || shiftTime < 1 && isIntegerValidInput(shiftTime)) {
+            if(shiftTime > 3 || shiftTime < 1 && isIntegerValidInput(shiftTime))
+            {
                 printf("Invalid Input. Terminating...\n");
                 break;
         }
@@ -512,7 +618,8 @@ void manageDrSchedule() {
             printf("\t\t\tMorning:\tEvening:\tNight:\n");
 
             // Prints the Day of the Week before each row
-            for (int i = 1; i <= DAYS_OF_WEEK; i++) {
+            for (int i = 1; i <= DAYS_OF_WEEK; i++)
+            {
 
                 if (i == 1) {
                     printf("Monday:\t");
@@ -558,9 +665,14 @@ void manageDrSchedule() {
  * @return int      - representing the index of the patient whose ID was passed into the method. If no patient is found
  *                  then -1 is returned instead.
  */
-int idExists(int id, struct Patient *patient_ptr, int size) {
-    for (int i = 0; i < size; i++ ) {
-        if (patient_ptr[i].patient_id == id) {
+int idExists(int id,
+                struct Patient *patient_ptr,
+                int size)
+{
+    for (int i = 0; i < size; i++ )
+    {
+        if (patient_ptr[i].patient_id == id)
+        {
             return i;
         }
     }
@@ -574,7 +686,10 @@ int idExists(int id, struct Patient *patient_ptr, int size) {
  * @param patient_ptr      - pointer to ab array of patients
  * @param totalPatients - int representing the total number of patients checked into the hotel
  */
-void organizePatientList(int index, struct Patient *patient_ptr, int totalPatients) {
+void organizePatientList(int index,
+                            struct Patient *patient_ptr,
+                            int totalPatients)
+{
     struct Patient def = {};
     for (int i = index; i < totalPatients - 1; i++  ) {
         patient_ptr[i] = patient_ptr[i + 1];
@@ -621,21 +736,27 @@ void toLowerString(char *str) {
  * @param patient_ptr pointer to patient array
  * @return 1 if file is read successfully, 0 otherwise
  */
-int read_from_patient_file(struct Patient **patient_ptr, int *totalPatients) {
+int read_from_patient_file(struct Patient **patient_ptr,
+                            int *totalPatients)
+{
     *totalPatients = 0;
     FILE *file = fopen(patient_file_path, "r");
-    if (file == NULL) {
+    if (file == NULL)
+    {
         printf("File not found.\n");
         return 0;
     }
 
     char buffer[200];
 
-    while (fgets(buffer, sizeof(buffer), file)) {
-        if (*totalPatients >= max_patients) {
+    while (fgets(buffer, sizeof(buffer), file))
+        {
+        if (*totalPatients >= max_patients)
+            {
             max_patients += 10;
             struct Patient *tmp = realloc(*patient_ptr, max_patients * sizeof(struct Patient));
-            if (!tmp) {
+            if (!tmp)
+            {
                 printf("Memory allocation error while reading file.\n");
                 fclose(file);
                 return 0;
@@ -675,13 +796,17 @@ int read_from_patient_file(struct Patient **patient_ptr, int *totalPatients) {
  * @param patient_ptr array of patients
  * @param totalPatients total number of patients
  */
-void write_to_patient_file(struct Patient *patient_ptr, int totalPatients) {
+void write_to_patient_file(struct Patient *patient_ptr,
+                            int totalPatients)
+{
     FILE *file = fopen(patient_file_path, "w");
-    if (file == NULL) {
+    if (file == NULL)
+    {
         printf("error opening file");
         return ;
     }
-    for (int i = 0; i < totalPatients; i++) {
+    for (int i = 0; i < totalPatients; i++)
+    {
         fprintf(file, "%d,%s,%d,%s,%d\n",
             patient_ptr[i].patient_id,
             patient_ptr[i].name,
@@ -692,13 +817,21 @@ void write_to_patient_file(struct Patient *patient_ptr, int totalPatients) {
     fclose(file);
 }
 
-int read_from_schedule_file(char schedule[7][3][50]) {
+/**
+ *
+ * @param schedule the weekly doctor schedule
+ * @return represents a successful read from file.
+ */
+int read_from_schedule_file(char schedule[7][3][50])
+{
     FILE *file = fopen(schedule_file_path, "r");
-    if (file == NULL) {
+    if (file == NULL)
+    {
         printf("File not found.\n");
     }
     char buffer[200];
-    while (fgets(buffer, sizeof(buffer), file)) {
+    while (fgets(buffer, sizeof(buffer), file))
+        {
         buffer[strcspn(buffer, "\n")] = 0;
         char *token;
         int row;
@@ -710,7 +843,8 @@ int read_from_schedule_file(char schedule[7][3][50]) {
         token = strtok(NULL, ",");
         col = atoi(token);
         token = strtok(NULL, ",");
-        if (token) {
+        if (token)
+        {
             strncpy(name, token, sizeof(name) - 1);
             strcpy(schedule[row][col], name);
         }
@@ -722,17 +856,250 @@ int read_from_schedule_file(char schedule[7][3][50]) {
  * wrtie doctor schedule to file
  * @param schedule  array o fdoctor schedule
  */
-void write_to_schedule_file(char schedule[7][3][50]) {
+void write_to_schedule_file(char schedule[7][3][50])
+{
     FILE *file = fopen(schedule_file_path, "w");
-    if (file == NULL) {
+    if (file == NULL)
+    {
         printf("error opening file");
     }
-    for (int i = 0; i < 7; i++) {
-        for (int j = 0; j < 3; j++) {
+    for (int i = 0; i < 7; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
             fprintf(file, "%d,%d,%s\n",i, j, schedule[i][j]);
         }
     }
     fclose(file);
+}
+
+/**
+ * generates a report how many patients were admitted over a given time period.
+ */
+void generateAdmissionReport()
+{
+    char timePeriod[20];
+    int count;
+    char report[1000] = "=== PATIENT ADMISSION REPORT ===\n\n";
+
+    printf("\nSelect time period:\n");
+    printf("1. Today\n");
+    printf("2. This Week\n");
+    printf("3. This Month\n");
+    printf("Enter choice: ");
+    int periodChoice;
+    scanf("%d", &periodChoice);
+    getchar();
+
+    switch(periodChoice)
+    {
+        case 1:
+            strcpy(timePeriod, "Today");
+            count = patient_added_current_session;
+            break;
+        case 2:
+            strcpy(timePeriod, "This Week");
+            count = patient_added_current_session * 7; // Simplified - would normally track daily
+            break;
+        case 3:
+            strcpy(timePeriod, "This Month");
+            count = patient_added_current_session * 30; // Simplified - would normally track daily
+            break;
+        default:
+            printf("Invalid choice. Using today's data.\n");
+            strcpy(timePeriod, "Today");
+            count = patient_added_current_session;
+    }
+
+    char temp[200];
+    sprintf(temp, "Period: %s\nTotal Admissions: %d\n\n", timePeriod, count);
+    strcat(report, temp);
+
+    printf("\n%s", report);
+
+    printf("Save to file? (y/n): ");
+    char saveChoice;
+    scanf("%c", &saveChoice);
+    getchar();
+
+    if (tolower(saveChoice) == 'y')
+    {
+        saveReportToFile(admission_reports_file_path,
+                            report);
+    }
+}
+
+/**
+ * Generates a report on how many patients have been discharged on a given day.
+ */
+void generateDischargeReport()
+{
+    char date[20];
+    char report[1000] = "=== PATIENT DISCHARGE REPORT ===\n\n";
+
+    printf("Enter date for discharge report (DD-MM-YYYY): ");
+    fgets(date, 20, stdin);
+    date[strcspn(date, "\n")] = 0;
+
+    // In a real system, we'd check discharge dates, but for now we'll use our counter
+    char temp[200];
+    sprintf(temp, "Date: %s\nPatients Discharged: %d\n\n", date, patient_discharged_current_session);
+    strcat(report, temp);
+
+    // List discharged patients (in a real system, we'd have discharge dates)
+    strcat(report, "Discharged Patients:\n");
+    for (int i = 0; i < totalPatients; i++)
+    {
+        if (patient_ptr[i].patient_id == 0)
+        { // Our placeholder for discharged patients
+            sprintf(temp, "ID: %d, Name: %s\n",
+                   patient_ptr[i].patient_id, patient_ptr[i].name);
+            strcat(report, temp);
+        }
+    }
+
+    printf("\n%s", report);
+
+    printf("Save to file? (y/n): ");
+    char saveChoice;
+    scanf("%c", &saveChoice);
+    getchar();
+
+    if (tolower(saveChoice) == 'y')
+    {
+        saveReportToFile(discharge_report_file_path,
+                            report);
+    }
+}
+
+/**
+ * Generates a report for how often each doctor is scheduled for a shift.
+ */
+void generateDoctorUtilizationReport()
+{
+    char report[2000] = "=== DOCTOR UTILIZATION REPORT ===\n\n";
+    char temp[200];
+
+    // Count shifts per doctor
+    typedef struct
+    {
+        char name[INPUT_CHARS];
+        int shifts;
+    } DoctorCount;
+
+    DoctorCount doctors[INPUT_CHARS] = {0};
+    int numDoctors = 0;
+
+    // Count doctor shifts
+    for (int i = 0; i < SCHEDULE_DAYS; i++)
+    {
+        for (int j = 0; j < SCHEDULE_SHIFTS; j++)
+        {
+            if (strlen(schedule[i][j]) > 0)
+            {
+                int found = 0;
+                for (int k = 0; k < numDoctors; k++)
+                {
+                    if (strcmp(doctors[k].name, schedule[i][j]) == 0)
+                    {
+                        doctors[k].shifts++;
+                        found = 1;
+                        break;
+                    }
+                }
+                if (!found)
+                {
+                    strcpy(doctors[numDoctors].name, schedule[i][j]);
+                    doctors[numDoctors].shifts = 1;
+                    numDoctors++;
+                }
+            }
+        }
+    }
+
+    // Generate report
+    strcat(report, "Doctor\t\tShifts This Week\n");
+    strcat(report, "--------------------------------\n");
+
+    for (int i = 0; i < numDoctors; i++)
+    {
+        sprintf(temp, "%s\t\t%d\n", doctors[i].name, doctors[i].shifts);
+        strcat(report, temp);
+    }
+
+    printf("\n%s", report);
+
+    printf("Save to file? (y/n): ");
+    char saveChoice;
+    scanf("%c", &saveChoice);
+    getchar();
+
+    if (tolower(saveChoice) == 'y')
+    {
+        saveReportToFile(dr_report_file_path,
+                        report);
+    }
+}
+
+/**
+ * Generates a report for how much each of the rooms is used during a given time span.
+ */
+void generateRoomUsageReport()
+{
+    char report[2000] = "=== ROOM UTILIZATION REPORT ===\n\n";
+    char temp[200];
+
+    strcat(report, "Room\tPatients\tStatus\n");
+    strcat(report, "--------------------------------\n");
+
+    for (int i = 0; i < 50; i++)
+    {
+        if (rooms[i] > 0)
+        {
+            sprintf(temp, "%d\t%d\t\t%s\n", i, rooms[i],
+                   rooms[i] > 1 ? "OVERUTILIZED" : "NORMAL");
+            strcat(report, temp);
+        }
+        else
+        {
+            sprintf(temp, "%d\t0\t\tUNDERUTILIZED\n", i);
+            strcat(report, temp);
+        }
+    }
+
+    printf("\n%s", report);
+
+    printf("Save to file? (y/n): ");
+    char saveChoice;
+    scanf("%c", &saveChoice);
+    getchar();
+
+    if (tolower(saveChoice) == 'y')
+    {
+        saveReportToFile(room_report_file_path,
+                            report);
+    }
+}
+
+/**
+ * Asks user if they would like to save the report passed in to a file ofr future use.
+ *
+ * @param filename name of the file to be saved
+ * @param content  formatted content to be saved in the report
+ */
+void saveReportToFile(const char *filename,
+                        const char *content)
+{
+    FILE *file = fopen(filename, "w");
+    if (file == NULL)
+    {
+        printf("Error saving report to file!\n");
+        return;
+    }
+
+    fprintf(file, "%s", content);
+    fclose(file);
+    printf("Report saved to %s\n", filename);
 }
 
 /**
@@ -742,7 +1109,9 @@ void write_to_schedule_file(char schedule[7][3][50]) {
  */
 int isNameValidInput(const char *name)
 {
-    if (strlen(name) <= 0 || strpbrk(name, "0123456789!@#$%^&*()") == NULL) {
+    if (strlen(name) <= 0 ||
+        strpbrk(name, "0123456789!@#$%^&*()") == NULL)
+    {
         return 1; // valid input
     }
     return 0; // invalid input
@@ -762,16 +1131,21 @@ int isIntegerValidInput(const int num)
     return 0;
 }
 
-
+/**
+ * Clears us memory on system close.
+ */
 void freeMemory()
 {
     free(patient_file_path);
     free(schedule_file_path);
     free(patient_ptr);
 
-    for (int h = 0; h < SCHEDULE_DAYS; h++) {
-        for (int i=0; i < SCHEDULE_SHIFTS; i++) {
-            for (int j = 0 ; j < SCHEDULE_CHARS; j++) {
+    for (int h = 0; h < SCHEDULE_DAYS; h++)
+    {
+        for (int i=0; i < SCHEDULE_SHIFTS; i++)
+        {
+            for (int j = 0 ; j < INPUT_CHARS; j++)
+                {
                 free(schedule[h][i][j]);
             }
         }
